@@ -39,7 +39,6 @@ public class AudioProcessor implements Closeable {
         this.audioInputStream = audioInputStream;
     }
 
-
     public Observable<AmplitudeFrequency> getObservable() {
 
         Configs configs = new Configs(audioInputStream.getFormat());
@@ -53,8 +52,6 @@ public class AudioProcessor implements Closeable {
                 s.onComplete();
             } catch (Exception exc) {
                 s.onError(exc);
-            } finally {
-                close();
             }
         });
 
@@ -81,7 +78,6 @@ public class AudioProcessor implements Closeable {
                     max = count;
                 }
             }
-
             return frequenciesByNotes.get(maxNote).stream().findFirst().get();
         });
 

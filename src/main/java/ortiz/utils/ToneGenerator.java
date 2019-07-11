@@ -11,13 +11,14 @@ public class ToneGenerator {
     public static void main(String[] args) {
 
         try {
-            ToneGenerator.createTone(440, 100, 1);
+            ToneGenerator.createTone(440, 100, 1); // A
+            ToneGenerator.createTone(523.25, 100, 1); // C
         } catch (LineUnavailableException | IOException exc) {
             System.out.println(exc);
         }
     }
 
-    public static void createTone(int hertz, int volume, int channels)
+    public static void createTone(double hertz, int volume, int channels)
             throws LineUnavailableException, IOException {
 
         if (channels < 1 && channels > 2) {
@@ -39,8 +40,6 @@ public class ToneGenerator {
             if (channels == 1) {
                 buf[i] = (byte) (Math.sin(angle) * volume);
             } else {
-                System.out.println("Byte 1 (Math.sin(angle) * volume); = " + (Math.sin(angle) * volume));
-                System.out.println("Byte 2 (Math.sin(angle) * volume); = " + (Math.cos(angle) * volume));
                 buf[i++] = (byte) (Math.sin(angle) * volume);
                 buf[i] = (byte) (Math.cos(angle) * volume);
             }
