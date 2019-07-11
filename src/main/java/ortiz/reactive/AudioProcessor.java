@@ -1,12 +1,12 @@
 package ortiz.reactive;
 
 import io.reactivex.Observable;
-import ortiz.model.AmplitudeFrequency;
-import ortiz.model.RawAudioMetadata;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
+import ortiz.model.AmplitudeFrequency;
+import ortiz.model.RawAudioMetadata;
 import ortiz.utils.ByteUtils;
 import ortiz.utils.Configs;
 
@@ -14,6 +14,10 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class AudioProcessor implements Closeable {
@@ -36,7 +40,7 @@ public class AudioProcessor implements Closeable {
     }
 
 
-    public Observable getObservable() {
+    public Observable<AmplitudeFrequency> getObservable() {
 
         Configs configs = new Configs(audioInputStream.getFormat());
 
@@ -49,32 +53,38 @@ public class AudioProcessor implements Closeable {
                 s.onComplete();
             } catch (Exception exc) {
                 s.onError(exc);
+            } finally {
+                close();
             }
         });
 
-        observable.map(rawAudioMetadata -> {
+        return observable.map(rawAudioMetadata -> {
             // Gets the frequencies and amplitudes from fourier theory
             double[] waveSampled = ByteUtils.toDouble(rawAudioMetadata.getPayload(), configs.isBigEndian(), configs.getNumBytesPerSample());
             FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
             Complex[] complexes = fft.transform(waveSampled, TransformType.FORWARD);
 
-
-            IntStream.range(0, complexes.length).mapToObj(i -> {
+            Map<String, List<AmplitudeFrequency>> frequenciesByNotes = IntStream.range(0, complexes.length).mapToObj(i -> {
                 double amplitude = Math.sqrt(Math.pow(complexes[i].getReal(), 2) + Math.pow(complexes[i].getImaginary(), 2));
                 double frequency = configs.getF0() * i;
                 return new AmplitudeFrequency(amplitude, frequency);
-
             }).filter(amplitudeFrequencyTime -> amplitudeFrequencyTime.getFrequency() >= 10 && amplitudeFrequencyTime.getFrequency() <= 10000)
                     .sorted((AmplitudeFrequency aft1, AmplitudeFrequency aft2) -> aft2.getAmplitude().compareTo(aft1.getAmplitude()))
-                    .limit(10);
+                    .limit(10).collect(Collectors.groupingBy(aft -> aft.getNote(), Collectors.toCollection(ArrayList::new)));
 
-            return null;
+            int max = 0;
+            String maxNote = null;
+            for (String note : frequenciesByNotes.keySet()) {
+                int count = frequenciesByNotes.get(note).size();
+                if (max <= count) {
+                    maxNote = note;
+                    max = count;
+                }
+            }
 
-            // TODO MAKE AVERAGE OF FREQUENCY AND ADD LOGIC OF TIMING.
-
-
+            return frequenciesByNotes.get(maxNote).stream().findFirst().get();
         });
-        return observable;
+
     }
 
     @Override

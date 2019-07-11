@@ -6,7 +6,7 @@ import java.math.RoundingMode;
 
 
 public class Configs {
-    private static float INITIAL_DELTA_TIME = 0.02f;
+    private static float INITIAL_DELTA_TIME = 0.1f;
     private AudioFormat audioFormat;
     private float sampleRate;
     private int sampleSizeInBits;

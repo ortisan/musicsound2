@@ -34,4 +34,20 @@ public class AmplitudeFrequency {
     public String getNoteWithOctave() {
         return noteWithOctave;
     }
+
+    public void setAmplitude(Double amplitude) {
+        this.amplitude = amplitude;
+    }
+
+    public void setFrequency(Double frequency) {
+        this.frequency = frequency;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public void setNoteWithOctave(String noteWithOctave) {
+        this.noteWithOctave = noteWithOctave;
+    }
 }
